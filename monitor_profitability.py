@@ -10,54 +10,42 @@ from pathlib import Path
 import smtplib
 from email.message import EmailMessage
 
-# =========================================================
-# SETTINGS
-# =========================================================
-INPUT_FILE = Path("orders_raw.xlsx")   # Your Excel file
+
+INPUT_FILE = Path("orders_raw.xlsx")   
 OUTPUT_DIR = Path("output")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-ALERT_MARGIN_THRESHOLD = 0.20  # 10% threshold
+ALERT_MARGIN_THRESHOLD = 0.20  
 SEND_EMAIL = True  # Change to True only after email details are set correctly
 
-# --- Email settings (fill these in if SEND_EMAIL = True) ---
+
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SENDER_EMAIL = "shaheryarumts@gmail.com"
 APP_PASSWORD = "pzctlichohxysljz"
 RECIPIENT_EMAIL = "shaheryarumts@gmail.com"
 
-# =========================================================
-# LOAD DATA
-# =========================================================
+
 df = pd.read_excel(INPUT_FILE)
 
-# Clean column names
+
 df.columns = df.columns.str.strip()
 
-# Convert important numeric columns safely
+
 for col in ["Sales", "Profit", "Discount", "Quantity"]:
     if col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-# If Order Date exists, convert to datetime
 if "Order Date" in df.columns:
     df["Order Date"] = pd.to_datetime(df["Order Date"], errors="coerce")
 
-# =========================================================
-# CORE KPI CALCULATIONS
-# =========================================================
 total_revenue = df["Sales"].sum()
 total_profit = df["Profit"].sum()
 profit_margin = total_profit / total_revenue if total_revenue != 0 else 0
 
 alert_triggered = profit_margin < ALERT_MARGIN_THRESHOLD
 
-# =========================================================
-# SUMMARY TABLES
-# =========================================================
 
-# Category summary
 category_summary = (
     df.groupby("Category", as_index=False)
       .agg(
@@ -68,7 +56,6 @@ category_summary = (
 )
 category_summary["Profit_Margin"] = category_summary["Profit"] / category_summary["Revenue"]
 
-# Segment summary
 segment_summary = (
     df.groupby("Segment", as_index=False)
       .agg(
@@ -79,7 +66,7 @@ segment_summary = (
 )
 segment_summary["Profit_Margin"] = segment_summary["Profit"] / segment_summary["Revenue"]
 
-# Discount group creation
+
 def discount_group(d):
     if pd.isna(d):
         return "Unknown"
@@ -96,7 +83,6 @@ def discount_group(d):
 
 df["Discount_Group"] = df["Discount"].apply(discount_group)
 
-# Discount summary
 discount_summary = (
     df.groupby("Discount_Group", as_index=False)
       .agg(
@@ -107,7 +93,6 @@ discount_summary = (
 )
 discount_summary["Profit_Margin"] = discount_summary["Profit"] / discount_summary["Revenue"]
 
-# Optional yearly summary if Order Date exists
 yearly_summary = None
 if "Order Date" in df.columns:
     df["Year"] = df["Order Date"].dt.year
@@ -120,9 +105,6 @@ if "Order Date" in df.columns:
     )
     yearly_summary["Profit_Margin"] = yearly_summary["Profit"] / yearly_summary["Revenue"]
 
-# =========================================================
-# EMAIL ALERT FUNCTION
-# =========================================================
 def send_alert_email(total_revenue, total_profit, profit_margin):
     msg = EmailMessage()
     msg["Subject"] = "ALERT: Profit Margin Below Threshold"
