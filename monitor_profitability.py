@@ -22,7 +22,7 @@ SEND_EMAIL = True  # Change to True only after email details are set correctly
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SENDER_EMAIL = "shaheryarumts@gmail.com"
-APP_PASSWORD = "pzctlichohxysljz"
+APP_PASSWORD = "your app password"
 RECIPIENT_EMAIL = "shaheryarumts@gmail.com"
 
 
